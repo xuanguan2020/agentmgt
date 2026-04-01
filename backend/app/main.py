@@ -9,7 +9,7 @@ from app.config import settings
 from app.storage.sqlite_store import sqlite_store
 from app.storage.memory_cache import memory_cache
 from app.websocket.manager import ws_manager
-from app.routers import agents, tasks, a2a, discovery
+from app.routers import agents, tasks, a2a, discovery, auth
 from app.services.discovery_service import discovery_service
 
 
@@ -40,6 +40,7 @@ app.include_router(agents.router)
 app.include_router(tasks.router)
 app.include_router(a2a.router)
 app.include_router(discovery.router)
+app.include_router(auth.router)
 
 
 @app.get("/api/health")

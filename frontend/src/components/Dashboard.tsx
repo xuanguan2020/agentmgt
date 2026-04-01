@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAgents } from '../hooks/useAgents';
 import { useTasks } from '../hooks/useTasks';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useDiscovery } from '../hooks/useDiscovery';
 import { useAppStore } from '../stores/appStore';
+import { useAuthStore } from '../stores/authStore';
 import { AgentCard } from './AgentCard';
 import { TaskItem } from './TaskItem';
 import { ActivityLog } from './ActivityLog';
@@ -11,15 +13,18 @@ import { InteractionPanel } from './InteractionPanel';
 import { AgentCreate, TaskCreate, A2AMessageSend } from '../types';
 import { 
   Plus, RefreshCw, WifiOff, Users, ListTodo, 
-  Radar, Settings, Activity, Cpu, Clock, X 
+  Radar, Settings, Activity, Cpu, Clock, X,
+  LogOut, ChevronDown, User
 } from 'lucide-react';
 
 const API_BASE = '/api';
 
 export function Dashboard() {
+  const navigate = useNavigate();
   const { agents, fetchAgents, createAgent, deleteAgent } = useAgents();
   const { tasks, runningTasks, fetchTasks, fetchRunningTasks, createTask } = useTasks();
   const { wsConnected } = useAppStore();
+  const { user, logout } = useAuthStore();
   const { fetchActivityLog } = { 
     fetchActivityLog: async () => {
       const res = await fetch(`${API_BASE}/activity`);
@@ -29,7 +34,14 @@ export function Dashboard() {
   };
   const { getDiscoveryStatus, configureDiscovery, triggerDiscovery } = useDiscovery();
   
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  
   useWebSocket();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const [discoveryStatus, setDiscoveryStatus] = useState<{
     enabled: boolean;
@@ -203,6 +215,40 @@ export function Dashboard() {
                 >
                   <RefreshCw className="w-5 h-5" />
                 </button>
+                
+                <div className="h-6 w-px bg-slate-200 mx-1"></div>
+                
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-all duration-200 cursor-pointer"
+                  >
+                    <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-indigo-600" />
+                    </div>
+                    <div className="text-left hidden sm:block">
+                      <p className="text-sm font-medium text-slate-900">{user?.username || 'User'}</p>
+                      <p className="text-xs text-slate-500 capitalize">{user?.role || 'user'}</p>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                  </button>
+                  
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50">
+                      <div className="px-4 py-3 border-b border-slate-100">
+                        <p className="text-sm font-medium text-slate-900">{user?.username}</p>
+                        <p className="text-xs text-slate-500">{user?.email}</p>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150 cursor-pointer"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign out</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
