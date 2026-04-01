@@ -105,3 +105,53 @@ export function useDiscovery() {
     discoverAgents,
   };
 }
+
+export interface SessionSpawnRequest {
+  target_agent_id: string;
+  task: Record<string, unknown>;
+}
+
+export interface SessionSendRequest {
+  session_id: string;
+  message: string;
+}
+
+export async function sessionSpawn(request: SessionSpawnRequest): Promise<{ session_id: string } | null> {
+  try {
+    const response = await fetch(`${API_BASE}/discovery/sessions/spawn`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    const data = await response.json();
+    return data.session_id ? { session_id: data.session_id } : null;
+  } catch (error) {
+    console.error('Failed to spawn session:', error);
+    return null;
+  }
+}
+
+export async function sessionSend(request: SessionSendRequest): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE}/discovery/sessions/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to send message:', error);
+    return false;
+  }
+}
+
+export async function sessionHistory(sessionId: string): Promise<Array<Record<string, unknown>>> {
+  try {
+    const response = await fetch(`${API_BASE}/discovery/sessions/${sessionId}/history`);
+    const data = await response.json();
+    return data.history || [];
+  } catch (error) {
+    console.error('Failed to get session history:', error);
+    return [];
+  }
+}
