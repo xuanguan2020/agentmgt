@@ -8,13 +8,13 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 DEMO_USERS = {
     "admin": {
-        "password_hash": "240be518fabd2724ddb6f04eeb9d5b9439941ac3",  # admin123
+        "password": "admin123",
         "email": "admin@agentmgt.local",
         "role": "admin",
         "id": "user_admin_001"
     },
     "user": {
-        "password_hash": "12dea96fec20593566ab75692c9949596833adc9",  # user123
+        "password": "user123",
         "email": "user@agentmgt.local",
         "role": "user",
         "id": "user_002"
@@ -41,9 +41,7 @@ async def login(request: LoginRequest):
     if not user_data:
         raise HTTPException(status_code=401, detail="Invalid username or password")
     
-    password_hash = hashlib.sha1(request.password.encode()).hexdigest()
-    
-    if password_hash != user_data["password_hash"]:
+    if request.password != user_data["password"]:
         raise HTTPException(status_code=401, detail="Invalid username or password")
     
     token = secrets.token_urlsafe(32)
