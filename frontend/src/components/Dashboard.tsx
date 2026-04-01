@@ -9,7 +9,10 @@ import { TaskItem } from './TaskItem';
 import { ActivityLog } from './ActivityLog';
 import { InteractionPanel } from './InteractionPanel';
 import { AgentCreate, TaskCreate, A2AMessageSend } from '../types';
-import { Plus, RefreshCw, Wifi, WifiOff, Users, ListTodo, Radar, Settings } from 'lucide-react';
+import { 
+  Plus, RefreshCw, WifiOff, Users, ListTodo, 
+  Radar, Settings, Activity, Cpu, Clock, X 
+} from 'lucide-react';
 
 const API_BASE = '/api';
 
@@ -17,11 +20,13 @@ export function Dashboard() {
   const { agents, fetchAgents, createAgent, deleteAgent } = useAgents();
   const { tasks, runningTasks, fetchTasks, fetchRunningTasks, createTask } = useTasks();
   const { wsConnected } = useAppStore();
-  const { fetchActivityLog } = { fetchActivityLog: async () => {
-    const res = await fetch(`${API_BASE}/activity`);
-    const data = await res.json();
-    useAppStore.getState().setActivityLog(data);
-  }};
+  const { fetchActivityLog } = { 
+    fetchActivityLog: async () => {
+      const res = await fetch(`${API_BASE}/activity`);
+      const data = await res.json();
+      useAppStore.getState().setActivityLog(data);
+    }
+  };
   const { getDiscoveryStatus, configureDiscovery, triggerDiscovery } = useDiscovery();
   
   useWebSocket();
@@ -46,6 +51,10 @@ export function Dashboard() {
   
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskType, setNewTaskType] = useState<'standalone' | 'collaborative'>('standalone');
+
+  const idleAgents = agents.filter(a => a.status === 'idle').length;
+  const busyAgents = agents.filter(a => a.status === 'busy').length;
+  const offlineAgents = agents.filter(a => a.status === 'offline').length;
 
   useEffect(() => {
     fetchAgents();
@@ -128,71 +137,120 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">OpenClaw Agent Management</h1>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              {wsConnected ? (
-                <Wifi className="w-5 h-5 text-green-500" />
-              ) : (
-                <WifiOff className="w-5 h-5 text-red-500" />
-              )}
-              <span className="text-sm text-gray-600">
-                {wsConnected ? 'Connected' : 'Disconnected'}
-              </span>
+    <div className="min-h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div className="max-w-[1600px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <Cpu className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900">OpenClaw Agent Management</h1>
+                <p className="text-xs text-slate-500">Multi-Agent Collaboration Platform</p>
+              </div>
             </div>
-            <button
-              onClick={handleDiscover}
-              disabled={isDiscovering}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
-              title="Discover agents from Gateway"
-            >
-              <Radar className={`w-5 h-5 ${isDiscovering ? 'animate-spin' : ''}`} />
-            </button>
-            <button
-              onClick={() => setShowDiscoveryModal(true)}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
-              title="Discovery settings"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => {
-                fetchAgents();
-                fetchTasks();
-                fetchRunningTasks();
-                fetchActivityLog();
-              }}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
+            
+            <div className="flex items-center gap-3">
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                wsConnected 
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {wsConnected ? (
+                  <>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span>Live</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="w-3 h-3" />
+                    <span>Disconnected</span>
+                  </>
+                )}
+              </div>
+              
+              <div className="h-6 w-px bg-slate-200"></div>
+              
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handleDiscover}
+                  disabled={isDiscovering}
+                  className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 cursor-pointer"
+                  title="Discover agents"
+                >
+                  <Radar className={`w-5 h-5 ${isDiscovering ? 'animate-spin' : ''}`} />
+                </button>
+                <button
+                  onClick={() => setShowDiscoveryModal(true)}
+                  className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 cursor-pointer"
+                  title="Settings"
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => {
+                    fetchAgents();
+                    fetchTasks();
+                    fetchRunningTasks();
+                    fetchActivityLog();
+                  }}
+                  className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 cursor-pointer"
+                  title="Refresh"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-[1600px] mx-auto px-6 py-6">
         <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-3">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-gray-600" />
-                  <h2 className="font-semibold text-gray-900">Agents</h2>
+          <div className="col-span-12 lg:col-span-3">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-indigo-600" />
+                    <h2 className="font-semibold text-slate-900">Agents</h2>
+                  </div>
+                  <button
+                    onClick={() => setShowAgentModal(true)}
+                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 cursor-pointer"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowAgentModal(true)}
-                  className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
+                
+                <div className="flex items-center gap-3 mt-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span className="text-xs text-slate-600">{idleAgents} idle</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span className="text-xs text-slate-600">{busyAgents} busy</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                    <span className="text-xs text-slate-600">{offlineAgents} offline</span>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-3 max-h-[500px] overflow-y-auto">
+              
+              <div className="p-3 space-y-2 max-h-[480px] overflow-y-auto">
                 {agents.length === 0 ? (
-                  <div className="text-center text-gray-400 py-8">
-                    No agents yet
+                  <div className="text-center py-12">
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center">
+                      <Users className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <p className="text-sm text-slate-500">No agents yet</p>
+                    <p className="text-xs text-slate-400 mt-1">Click + to register or use Discover</p>
                   </div>
                 ) : (
                   agents.map((agent) => (
@@ -209,29 +267,36 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div className="col-span-5">
-            <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <ListTodo className="w-5 h-5 text-gray-600" />
-                  <h2 className="font-semibold text-gray-900">Running Tasks</h2>
-                  {runningTasks.length > 0 && (
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
-                      {runningTasks.length}
-                    </span>
-                  )}
+          <div className="col-span-12 lg:col-span-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+              <div className="px-5 py-4 border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-indigo-600" />
+                    <h2 className="font-semibold text-slate-900">Running Tasks</h2>
+                    {runningTasks.length > 0 && (
+                      <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
+                        {runningTasks.length}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowTaskModal(true)}
+                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 cursor-pointer"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowTaskModal(true)}
-                  className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
               </div>
-              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+              
+              <div className="p-3 space-y-2 max-h-[320px] overflow-y-auto">
                 {runningTasks.length === 0 ? (
-                  <div className="text-center text-gray-400 py-8">
-                    No running tasks
+                  <div className="text-center py-12">
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center">
+                      <Clock className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <p className="text-sm text-slate-500">No running tasks</p>
+                    <p className="text-xs text-slate-400 mt-1">Tasks will appear here when running</p>
                   </div>
                 ) : (
                   runningTasks.map((task) => (
@@ -241,20 +306,27 @@ export function Dashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <ListTodo className="w-5 h-5 text-gray-600" />
-                  <h2 className="font-semibold text-gray-900">All Tasks</h2>
-                  <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full">
-                    {tasks.length}
-                  </span>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ListTodo className="w-5 h-5 text-indigo-600" />
+                    <h2 className="font-semibold text-slate-900">All Tasks</h2>
+                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-full">
+                      {tasks.length}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-3 max-h-[300px] overflow-y-auto">
+              
+              <div className="p-3 space-y-2 max-h-[320px] overflow-y-auto">
                 {tasks.length === 0 ? (
-                  <div className="text-center text-gray-400 py-8">
-                    No tasks yet
+                  <div className="text-center py-12">
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center">
+                      <ListTodo className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <p className="text-sm text-slate-500">No tasks yet</p>
+                    <p className="text-xs text-slate-400 mt-1">Create a task to get started</p>
                   </div>
                 ) : (
                   tasks.map((task) => (
@@ -265,13 +337,14 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div className="col-span-4 space-y-6">
+          <div className="col-span-12 lg:col-span-3 space-y-6">
             <InteractionPanel
               agents={agents}
               selectedAgentId={selectedAgentId}
               onSendMessage={handleSendA2AMessage}
             />
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <ActivityLog />
             </div>
           </div>
@@ -279,146 +352,186 @@ export function Dashboard() {
       </main>
 
       {showAgentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold mb-4">Create New Agent</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Name</label>
-                <input
-                  type="text"
-                  value={newAgentName}
-                  onChange={(e) => setNewAgentName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                  placeholder="Agent name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Capabilities (comma-separated)</label>
-                <input
-                  type="text"
-                  value={newAgentCaps}
-                  onChange={(e) => setNewAgentCaps(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                  placeholder="coding, analysis, research"
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowAgentModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateAgent}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Create
-                </button>
-              </div>
+        <Modal onClose={() => setShowAgentModal(false)} title="Register New Agent">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Agent Name</label>
+              <input
+                type="text"
+                value={newAgentName}
+                onChange={(e) => setNewAgentName(e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                placeholder="Enter agent name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Capabilities</label>
+              <input
+                type="text"
+                value={newAgentCaps}
+                onChange={(e) => setNewAgentCaps(e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                placeholder="coding, analysis, research"
+              />
+              <p className="text-xs text-slate-500 mt-1.5">Comma-separated list of capabilities</p>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setShowAgentModal(false)}
+                className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-all duration-200 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateAgent}
+                disabled={!newAgentName.trim()}
+                className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Register Agent
+              </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {showTaskModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold mb-4">Create New Task</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Task Name</label>
-                <input
-                  type="text"
-                  value={newTaskName}
-                  onChange={(e) => setNewTaskName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                  placeholder="Task name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Type</label>
-                <select
-                  value={newTaskType}
-                  onChange={(e) => setNewTaskType(e.target.value as 'standalone' | 'collaborative')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                >
-                  <option value="standalone">Standalone</option>
-                  <option value="collaborative">Collaborative</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowTaskModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateTask}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Create
-                </button>
-              </div>
+        <Modal onClose={() => setShowTaskModal(false)} title="Create New Task">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Task Name</label>
+              <input
+                type="text"
+                value={newTaskName}
+                onChange={(e) => setNewTaskName(e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                placeholder="Enter task name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Task Type</label>
+              <select
+                value={newTaskType}
+                onChange={(e) => setNewTaskType(e.target.value as 'standalone' | 'collaborative')}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+              >
+                <option value="standalone">Standalone</option>
+                <option value="collaborative">Collaborative</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setShowTaskModal(false)}
+                className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-all duration-200 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateTask}
+                disabled={!newTaskName.trim()}
+                className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Create Task
+              </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {showDiscoveryModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold mb-4">Gateway Discovery Settings</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Gateway URL</label>
-                <input
-                  type="text"
-                  value={gatewayUrl}
-                  onChange={(e) => setGatewayUrl(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                  placeholder="http://localhost:8080"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">API Key (optional)</label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded"
-                  placeholder="Leave empty if no auth required"
-                />
-              </div>
-              {discoveryStatus && (
-                <div className="text-sm text-gray-500 space-y-1">
-                  <p>Status: {discoveryStatus.enabled ? 'Enabled' : 'Disabled'}</p>
-                  <p>Auto-discovery: {discoveryStatus.auto_discovery_running ? 'Running' : 'Stopped'}</p>
-                  {discoveryStatus.last_discovery && (
-                    <p>Last discovery: {new Date(discoveryStatus.last_discovery).toLocaleString()}</p>
-                  )}
+        <Modal onClose={() => setShowDiscoveryModal(false)} title="Gateway Discovery Settings">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Gateway URL</label>
+              <input
+                type="text"
+                value={gatewayUrl}
+                onChange={(e) => setGatewayUrl(e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                placeholder="http://localhost:8080"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">API Key (optional)</label>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                placeholder="Leave empty if no auth required"
+              />
+            </div>
+            {discoveryStatus && (
+              <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">Status</span>
+                  <span className={`font-medium ${discoveryStatus.enabled ? 'text-emerald-600' : 'text-slate-400'}`}>
+                    {discoveryStatus.enabled ? 'Enabled' : 'Disabled'}
+                  </span>
                 </div>
-              )}
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowDiscoveryModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveDiscoveryConfig}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  Save
-                </button>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">Auto-discovery</span>
+                  <span className={`font-medium ${discoveryStatus.auto_discovery_running ? 'text-emerald-600' : 'text-slate-400'}`}>
+                    {discoveryStatus.auto_discovery_running ? 'Running' : 'Stopped'}
+                  </span>
+                </div>
+                {discoveryStatus.last_discovery && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">Last discovery</span>
+                    <span className="text-slate-900 font-medium">
+                      {new Date(discoveryStatus.last_discovery).toLocaleTimeString()}
+                    </span>
+                  </div>
+                )}
               </div>
+            )}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => setShowDiscoveryModal(false)}
+                className="px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-all duration-200 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveDiscoveryConfig}
+                className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 cursor-pointer"
+              >
+                Save Configuration
+              </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
+    </div>
+  );
+}
+
+function Modal({ 
+  children, 
+  onClose, 
+  title 
+}: { 
+  children: React.ReactNode; 
+  onClose: () => void; 
+  title: string;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div 
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        onClick={onClose}
+      ></div>
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all duration-200 cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        {children}
+      </div>
     </div>
   );
 }
