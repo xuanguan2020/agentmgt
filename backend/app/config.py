@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
+    OPENCLAW_GATEWAY_URL: str = "http://localhost:8080"
+    OPENCLAW_GATEWAY_API_KEY: Optional[str] = None
+    OPENCLAW_DISCOVERY_ENABLED: bool = True
+    OPENCLAW_DISCOVERY_INTERVAL: int = 60
+
     class Config:
         env_file = ".env"
         extra = "allow"

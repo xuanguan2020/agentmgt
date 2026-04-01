@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAgents } from '../hooks/useAgents';
 import { useTasks } from '../hooks/useTasks';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useDiscovery } from '../hooks/useDiscovery';
 import { useAppStore } from '../stores/appStore';
 import { AgentCard } from './AgentCard';
 import { TaskItem } from './TaskItem';
 import { ActivityLog } from './ActivityLog';
 import { InteractionPanel } from './InteractionPanel';
 import { AgentCreate, TaskCreate, A2AMessageSend } from '../types';
-import { Plus, RefreshCw, Wifi, WifiOff, Users, ListTodo } from 'lucide-react';
+import { Plus, RefreshCw, Wifi, WifiOff, Users, ListTodo, Radar, Settings } from 'lucide-react';
 
 const API_BASE = '/api';
 
@@ -21,8 +22,20 @@ export function Dashboard() {
     const data = await res.json();
     useAppStore.getState().setActivityLog(data);
   }};
+  const { getDiscoveryStatus, configureDiscovery, triggerDiscovery } = useDiscovery();
   
   useWebSocket();
+
+  const [discoveryStatus, setDiscoveryStatus] = useState<{
+    enabled: boolean;
+    gateway_url: string;
+    last_discovery: string | null;
+    auto_discovery_running: boolean;
+  } | null>(null);
+  const [showDiscoveryModal, setShowDiscoveryModal] = useState(false);
+  const [gatewayUrl, setGatewayUrl] = useState('http://localhost:8080');
+  const [apiKey, setApiKey] = useState('');
+  const [isDiscovering, setIsDiscovering] = useState(false);
 
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [showAgentModal, setShowAgentModal] = useState(false);
@@ -39,7 +52,32 @@ export function Dashboard() {
     fetchTasks();
     fetchRunningTasks();
     fetchActivityLog();
+    fetchDiscoveryStatus();
   }, [fetchAgents, fetchTasks, fetchRunningTasks, fetchActivityLog]);
+
+  const fetchDiscoveryStatus = async () => {
+    const status = await getDiscoveryStatus();
+    if (status) {
+      setDiscoveryStatus(status);
+      setGatewayUrl(status.gateway_url);
+    }
+  };
+
+  const handleDiscover = async () => {
+    setIsDiscovering(true);
+    const result = await triggerDiscovery();
+    if (result) {
+      await fetchAgents();
+      await fetchActivityLog();
+    }
+    setIsDiscovering(false);
+  };
+
+  const handleSaveDiscoveryConfig = async () => {
+    await configureDiscovery(gatewayUrl, apiKey || undefined, true);
+    await fetchDiscoveryStatus();
+    setShowDiscoveryModal(false);
+  };
 
   const handleCreateAgent = async () => {
     if (!newAgentName.trim()) return;
@@ -105,6 +143,21 @@ export function Dashboard() {
                 {wsConnected ? 'Connected' : 'Disconnected'}
               </span>
             </div>
+            <button
+              onClick={handleDiscover}
+              disabled={isDiscovering}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+              title="Discover agents from Gateway"
+            >
+              <Radar className={`w-5 h-5 ${isDiscovering ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={() => setShowDiscoveryModal(true)}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+              title="Discovery settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
             <button
               onClick={() => {
                 fetchAgents();
@@ -307,6 +360,59 @@ export function Dashboard() {
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
                   Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDiscoveryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Gateway Discovery Settings</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Gateway URL</label>
+                <input
+                  type="text"
+                  value={gatewayUrl}
+                  onChange={(e) => setGatewayUrl(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded"
+                  placeholder="http://localhost:8080"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">API Key (optional)</label>
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded"
+                  placeholder="Leave empty if no auth required"
+                />
+              </div>
+              {discoveryStatus && (
+                <div className="text-sm text-gray-500 space-y-1">
+                  <p>Status: {discoveryStatus.enabled ? 'Enabled' : 'Disabled'}</p>
+                  <p>Auto-discovery: {discoveryStatus.auto_discovery_running ? 'Running' : 'Stopped'}</p>
+                  {discoveryStatus.last_discovery && (
+                    <p>Last discovery: {new Date(discoveryStatus.last_discovery).toLocaleString()}</p>
+                  )}
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowDiscoveryModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveDiscoveryConfig}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Save
                 </button>
               </div>
             </div>

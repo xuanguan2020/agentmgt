@@ -9,13 +9,16 @@ from app.config import settings
 from app.storage.sqlite_store import sqlite_store
 from app.storage.memory_cache import memory_cache
 from app.websocket.manager import ws_manager
-from app.routers import agents, tasks, a2a
+from app.routers import agents, tasks, a2a, discovery
+from app.services.discovery_service import discovery_service
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await sqlite_store.init_db()
+    await discovery_service.start_auto_discovery()
     yield
+    await discovery_service.stop_auto_discovery()
     await sqlite_store.close()
 
 
@@ -36,6 +39,7 @@ app.add_middleware(
 app.include_router(agents.router)
 app.include_router(tasks.router)
 app.include_router(a2a.router)
+app.include_router(discovery.router)
 
 
 @app.get("/api/health")

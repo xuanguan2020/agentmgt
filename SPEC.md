@@ -169,6 +169,14 @@ Agent A                      Agent B
 | POST | `/api/a2a/send` | Send A2A message |
 | GET | `/api/a2a/messages/{agent_id}` | Get messages for agent |
 
+### Gateway Discovery
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/discovery/agents` | Discover agents from OpenClaw Gateway |
+| GET | `/api/discovery/status` | Get discovery service status |
+| POST | `/api/discovery/configure` | Configure Gateway URL and auth |
+| POST | `/api/discovery/trigger` | Manually trigger discovery |
+
 ### WebSocket
 | Endpoint | Description |
 |----------|-------------|
@@ -271,6 +279,16 @@ agentmgt/
 │   │   └── websocket/
 │   │       ├── __init__.py
 │   │       └── manager.py
+│   │   ├── services/
+│   │   │   ├── discovery_service.py  # OpenClaw Gateway discovery
+│   │   │   ├── agent_service.py
+│   │   │   ├── task_service.py
+│   │   │   └── a2a_service.py
+│   │   └── routers/
+│   │       ├── agents.py
+│   │       ├── tasks.py
+│   │       ├── a2a.py
+│   │       └── discovery.py
 │   ├── requirements.txt
 │   └── run.py
 ├── frontend/
@@ -284,7 +302,8 @@ agentmgt/
 │   │   ├── hooks/
 │   │   │   ├── useAgents.ts
 │   │   │   ├── useTasks.ts
-│   │   │   └── useWebSocket.ts
+│   │   │   ├── useWebSocket.ts
+│   │   │   └── useDiscovery.ts
 │   │   ├── stores/
 │   │   │   └── appStore.ts
 │   │   ├── types/
@@ -328,6 +347,12 @@ agentmgt/
 - [ ] Agents can discover other agents' capabilities
 - [ ] Agents can autonomously decide to delegate tasks
 - [ ] System supports collaborative task execution
+
+### AC6: Gateway Discovery
+- [ ] Can discover agents from OpenClaw Gateway
+- [ ] Can configure Gateway URL and API key
+- [ ] Auto-discovery runs at configurable intervals
+- [ ] Discovered agents appear in agent list with source indicator
 
 ---
 

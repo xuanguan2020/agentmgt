@@ -76,3 +76,22 @@ export interface WebSocketMessage {
   type: string;
   [key: string]: unknown;
 }
+
+export interface DiscoveryConfig {
+  gateway_url: string;
+  api_key?: string;
+  enabled?: boolean;
+}
+
+export interface DiscoveryStatus {
+  enabled: boolean;
+  gateway_url: string;
+  last_discovery: string | null;
+  auto_discovery_running: boolean;
+}
+
+export interface GatewayAgentsResponse {
+  agents: Agent[];
+  gateway_url: string;
+  count: number;
+}
