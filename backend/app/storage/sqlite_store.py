@@ -18,7 +18,7 @@ class AgentDB(Base):
     status = Column(String, default="idle")
     capabilities = Column(JSON, default=list)
     current_task_id = Column(String, nullable=True)
-    metadata = Column(JSON, default=dict)
+    extra_data = Column(JSON, default=dict)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_heartbeat = Column(DateTime, default=datetime.utcnow)
 
